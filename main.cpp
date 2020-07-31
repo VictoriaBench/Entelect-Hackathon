@@ -4,6 +4,9 @@
 #include <sstream>
 #include <vector>
 #include <cmath>
+#include <algorithm>
+
+
 using namespace std;
 
 struct coord{
@@ -13,6 +16,8 @@ struct coord{
 int mDistance(coord A, coord B){
     return abs(A.row-B.row)+abs(A.col-B.col);
 }
+
+
 
 
 class Crate{
@@ -71,32 +76,43 @@ public:
         start.col = 0;
         for(Crate& pickup : pickups){
             int worm2crate = mDistance(start, pickup.getCrateLocation());
-            cout<<worm2crate<<endl;
             dist += worm2crate;
             int pathDist = pickup.pathDistance();
             dist += pathDist;
             start = pickup.getBaseLocation();
         }
-        cout<<endl;
+        return dist;
     }
 
     string getPath(){
         stringstream ss;
         for(int i = 0;i<pickups.size();i++){
             auto crate = pickups[i];
-            ss << crate.getId()<<", "<<char(tolower(crate.getId()));
+            ss << crate.getId()<<","<<char(tolower(crate.getId()));
             if(i<pickups.size()-1){
-                ss<<", ";
+                ss<<",";
+            }else{
+                ss<<" \n";
             }
         }
         return ss.str();
     }
-};
 
+    coord getLocation(){
+        return location;
+    }
+};
+bool cratesRemaining(const vector<Crate>& crates){
+    bool allCratesPickedUp = true;
+    for(auto crate:crates){
+        allCratesPickedUp = allCratesPickedUp && crate.isPickedUp();
+    }
+    return !allCratesPickedUp;
+}
 
 int main()
 {
-    ifstream file("example_2.input");
+    ifstream file("map_1.input");
     string line;
     getline(file, line);
     vector<int> vect;
@@ -151,23 +167,50 @@ int main()
         worms.push_back(w);
     }
 
-    worms[0].pickupCrate(crates[0]);
-    worms[1].pickupCrate(crates[1]);
+    while(cratesRemaining(crates)){
+        int min = 1000000;
+        int chosenWorm;
+        int chosenCrate;
+        for(int i = 0;i<crates.size();i++){
+            if(!crates[i].isPickedUp()){
+                for(int j = 0;j<worms.size();j++){
+                    int score = mDistance(worms[j].getLocation(), crates[i].getCrateLocation()) - crates[i].pathDistance();
+                    if(score<min){
+                        min = score;
+                        chosenWorm = j;
+                        chosenCrate = i;
+                    }
+                }
+            }
+        }
+        worms[chosenWorm].pickupCrate(crates[chosenCrate]);
+    }
 
+    coord zero;
+
+    for(auto& crate1 :crates){
+        int dist = mDistance(crate1.getCrateLocation(), zero);
+        cout<<crate1.getId()<<dist<<"\t|\t";
+        for(auto& crate2: crates){
+            dist = mDistance(crate1.getCrateLocation(),crate2.getBaseLocation());
+            cout<<dist<<"\t|\t";
+        }
+        cout<<endl;
+    }
+
+
+    ofstream output;
+    output.open("output.txt");
 
     int totalDistance = 0;
-    for(auto worm:worms){
-        cout<<worm.getPath()<<endl;
-        totalDistance += worm.pathDistance();
+    for(int i = 0;i<wormnum;i++){
+        int wormPath = worms[i].pathDistance();
+        totalDistance += wormPath;
+        output<<worms[i].getPath();
+        cout<<worms[i].getPath();
     }
-
-    bool allCratesPickedUp = true;
-    for(auto crate:crates){
-        allCratesPickedUp = allCratesPickedUp && crate.isPickedUp();
-    }
-
     cout<<"Total distance: "<<totalDistance<<endl;
-    cout<<"All crates picked up: "<<(allCratesPickedUp?"true":"false")<<endl;
+    cout<<"All crates picked up: "<<(!cratesRemaining(crates)?"true":"false")<<endl;
 
     return 0;
 }
