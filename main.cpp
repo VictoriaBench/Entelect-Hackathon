@@ -24,9 +24,11 @@ private:
     char id;
     bool pickedUp=false;
 public:
-    int pathDistance(){return mDistance(crate_location, base_location);}
+    int pathDistance(){
+        return mDistance(crate_location, base_location);
+    }
     void printCrate(){
-        cout<<id<<" ("<<crate_location.row<<", "<<crate_location.col<<") --> ("<<base_location.row<<", "<<base_location.col<<")"<<endl;
+        cout<<id<<" ("<<crate_location.row<<", "<<crate_location.col<<") --> ("<<base_location.row<<", "<<base_location.col<<")"<<"  "<<pathDistance()<<endl;
     }
 
     coord getBaseLocation(){
@@ -60,18 +62,22 @@ public:
         crate.pickUp();
         pickups.push_back(crate);
         location = crate.getBaseLocation();
-
     }
 
     int pathDistance(){
         int dist = 0;
         coord start;
-        for(auto pickup:pickups){
-            dist+=mDistance(start, pickup.getCrateLocation());
-            dist+=pickup.pathDistance();
+        start.row = 0;
+        start.col = 0;
+        for(Crate& pickup : pickups){
+            int worm2crate = mDistance(start, pickup.getCrateLocation());
+            cout<<worm2crate<<endl;
+            dist += worm2crate;
+            int pathDist = pickup.pathDistance();
+            dist += pathDist;
             start = pickup.getBaseLocation();
         }
-
+        cout<<endl;
     }
 
     string getPath(){
@@ -90,7 +96,7 @@ public:
 
 int main()
 {
-    ifstream file("map_1.input");
+    ifstream file("example_2.input");
     string line;
     getline(file, line);
     vector<int> vect;
@@ -145,10 +151,13 @@ int main()
         worms.push_back(w);
     }
 
+    worms[0].pickupCrate(crates[0]);
+    worms[1].pickupCrate(crates[1]);
 
 
     int totalDistance = 0;
     for(auto worm:worms){
+        cout<<worm.getPath()<<endl;
         totalDistance += worm.pathDistance();
     }
 
